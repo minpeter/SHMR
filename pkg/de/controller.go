@@ -65,15 +65,38 @@ func New(url, token string) (id string, err error) {
 		return "", errors.New("failed to start container")
 	}
 
-	return resp.ID, nil
+	// return resp.ID, nil
+	return resp.ID[:12], nil
 }
 
-func Remove(id string) error {
+func Remove(id, token string) error {
 	// 도커 클라이언트 초기화
 	ctx := context.Background()
 	cli, err := set()
 	if err != nil {
 		return err
+	}
+
+	// exec ./config.sh remove --token + token 실행 & 완료 대기
+	exec, err := cli.ContainerExecCreate(ctx, id, types.ExecConfig{
+		Cmd: []string{"./config.sh", "remove", "--token", token},
+	})
+	if err != nil {
+		return errors.New("failed to create exec")
+	}
+	// 완료까지 대기
+	err = cli.ContainerExecStart(ctx, exec.ID, types.ExecStartCheck{})
+	if err != nil {
+		return errors.New("failed to start exec")
+	}
+
+	statusCh, errCh := cli.ContainerWait(ctx, id, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return errors.New("failed to wait exec")
+		}
+	case <-statusCh:
 	}
 
 	// 컨테이너 삭제
@@ -83,7 +106,6 @@ func Remove(id string) error {
 	if err != nil {
 		return errors.New("failed to remove container")
 	}
-
 	return nil
 }
 
@@ -106,7 +128,7 @@ func List() (map[string]string, error) {
 	list := make(map[string]string)
 	for _, container := range containers {
 		if container.Image == "minpeter/gh-action-runner:latest" {
-			list[container.ID] = container.State
+			list[container.ID[:12]] = container.State
 		}
 	}
 

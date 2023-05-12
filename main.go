@@ -20,6 +20,7 @@ func main() {
 
 	// remove 커맨드의 플래그
 	removeID := removeCmd.String("id", "", "ID to remove")
+	removeToken := removeCmd.String("token", "", "Token to remove")
 
 	// list 커맨드의 플래그
 	// 없음
@@ -43,12 +44,12 @@ func main() {
 		add(*addURL, *addToken)
 	case "remove":
 		removeCmd.Parse(os.Args[2:])
-		if *removeID == "" {
+		if *removeID == "" && *removeToken == "" {
 			fmt.Println("Please provide an ID to remove")
 			removeCmd.PrintDefaults()
 			os.Exit(1)
 		}
-		remove(*removeID)
+		remove(*removeID, *removeToken)
 	case "list":
 		listCmd.Parse(os.Args[2:])
 		list()
@@ -71,10 +72,10 @@ func add(url, token string) {
 	fmt.Println("Added successfully", id)
 }
 
-func remove(id string) {
+func remove(id, token string) {
 	// remove 커맨드 로직 구현
 
-	err := de.Remove(id)
+	err := de.Remove(id, token)
 	if err != nil {
 		fmt.Println(err)
 	}
