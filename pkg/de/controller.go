@@ -53,6 +53,10 @@ func New(url, token string) (id string, err error) {
 			"URL=" + url,
 			"TOKEN=" + token,
 		},
+		// 도커 소켓을 공유하여 호스트의 도커 데몬을 사용
+		Volumes: map[string]struct{}{
+			"/var/run/docker.sock": {},
+		},
 		Tty: false,
 	}, nil, nil, nil, "")
 	if err != nil {
