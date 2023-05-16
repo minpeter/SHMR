@@ -67,6 +67,7 @@ func add(url, token string) {
 	id, err := de.New(url, token)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	fmt.Println("Added successfully", id)
@@ -78,6 +79,7 @@ func remove(id, token string) {
 	err := de.Remove(id, token)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	fmt.Println("Removing ID:", id)
 
@@ -90,6 +92,7 @@ func list() {
 	list, err := de.List()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	for id, state := range list {

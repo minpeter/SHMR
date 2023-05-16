@@ -1,0 +1,18 @@
+name: self-hosted runner test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: echo test
+        run: echo "test"
+      - name: run docker
+        run: docker run --rm ubuntu echo "test"

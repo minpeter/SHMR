@@ -7,7 +7,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 )
 
@@ -46,16 +45,6 @@ func New(url, token string) (id string, err error) {
 		return "", err
 	}
 
-	hostSocket := "/var/run/docker.sock"
-	containerSocket := "/var/run/docker.sock"
-	mounts := []mount.Mount{
-		{
-			Type:   mount.TypeBind,
-			Source: hostSocket,
-			Target: containerSocket,
-		},
-	}
-
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
 		Env: []string{
@@ -64,7 +53,9 @@ func New(url, token string) (id string, err error) {
 		},
 		Tty: false,
 	}, &container.HostConfig{
-		Mounts: mounts,
+		Binds: []string{
+			"/var/run/docker.sock:/var/run/docker.sock",
+		},
 	}, nil, nil, "")
 	if err != nil {
 		return "", errors.New("failed to create container")
