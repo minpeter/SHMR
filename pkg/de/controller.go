@@ -3,11 +3,15 @@ package de
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 )
+
+var imageName = "gh-action-runner:latest"
 
 func set() (*client.Client, error) {
 	// 도커 클라이언트 초기화
@@ -23,16 +27,11 @@ func set() (*client.Client, error) {
 		return nil, errors.New("failed to connect to Docker daemon")
 	}
 
-	// "minpeter/gh-action-runner:latest" 이미지의 존재 여부 확인
-	imageName := "minpeter/gh-action-runner:latest"
 	_, _, err = cli.ImageInspectWithRaw(context.Background(), imageName)
 	if err != nil {
-		// 이미지 풀 시도
-		_, err = cli.ImagePull(context.Background(), imageName, types.ImagePullOptions{})
-		if err != nil {
-			return nil, errors.New("failed to pull image")
-		}
-
+		fmt.Println("failed to inspect image gh-action-runner:latest")
+		fmt.Println("try ./install.sh again")
+		return nil, errors.New("failed to inspect image gh-action-runner:latest")
 	}
 
 	// 모든 조건을 만족하면 true 반환
@@ -47,18 +46,26 @@ func New(url, token string) (id string, err error) {
 		return "", err
 	}
 
+	hostSocket := "/var/run/docker.sock"
+	containerSocket := "/var/run/docker.sock"
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: hostSocket,
+			Target: containerSocket,
+		},
+	}
+
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: "minpeter/gh-action-runner:latest",
+		Image: imageName,
 		Env: []string{
 			"URL=" + url,
 			"TOKEN=" + token,
 		},
-		// 도커 소켓을 공유하여 호스트의 도커 데몬을 사용
-		Volumes: map[string]struct{}{
-			"/var/run/docker.sock": {},
-		},
 		Tty: false,
-	}, nil, nil, nil, "")
+	}, &container.HostConfig{
+		Mounts: mounts,
+	}, nil, nil, "")
 	if err != nil {
 		return "", errors.New("failed to create container")
 	}
@@ -131,7 +138,7 @@ func List() (map[string]string, error) {
 	// gh-action-runner 이미지로 실행중인 컨테이너의 상태와 ID를 반환
 	list := make(map[string]string)
 	for _, container := range containers {
-		if container.Image == "minpeter/gh-action-runner:latest" {
+		if container.Image == imageName {
 			list[container.ID[:12]] = container.State
 		}
 	}
