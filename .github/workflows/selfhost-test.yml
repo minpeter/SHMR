@@ -13,6 +13,8 @@ jobs:
         with:
           fetch-depth: 0
       - name: echo test
-        run: echo "test"
+        run: echo "test - self-hosted runner"
+      - name: print work directory
+        run: pwd
       - name: run docker
         run: docker run --rm ubuntu echo "test"
